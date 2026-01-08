@@ -62,8 +62,9 @@ router.get('/events', async (req: Request, res: Response) => {
 router.post('/events', authenticate, upload.single('image'), async (req: Request, res: Response) => {
     try {
         const eventData = { ...req.body };
+        const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
         if (req.file) {
-            eventData.imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+            eventData.imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
         }
         const newEvent = new Event(eventData);
         await newEvent.save();
@@ -77,8 +78,9 @@ router.post('/events', authenticate, upload.single('image'), async (req: Request
 router.put('/events/:id', authenticate, upload.single('image'), async (req: Request, res: Response) => {
     try {
         const updateData = { ...req.body };
+        const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
         if (req.file) {
-            updateData.imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+            updateData.imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
         }
         const updated = await Event.findByIdAndUpdate(req.params.id, updateData, { new: true });
         if (!updated) return res.status(404).json({ message: 'Not found' });
