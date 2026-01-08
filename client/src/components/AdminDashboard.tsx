@@ -21,6 +21,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     const [formData, setFormData] = useState<EventData>({
         title: '', category: '', location: '', price: '', date: '', imageUrl: '', description: ''
     });
+    const [imageFile, setImageFile] = useState<File | null>(null);
     const [errors, setErrors] = useState<any>({});
 
     useEffect(() => {
@@ -43,7 +44,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         if (!formData.location) tempErrors.location = "Location is required";
         if (!formData.price || isNaN(Number(formData.price))) tempErrors.price = "Valid price is required";
         if (!formData.date) tempErrors.date = "Date is required";
-        if (!formData.imageUrl) tempErrors.imageUrl = "Image URL is required";
+        if (!formData.imageUrl && !imageFile) tempErrors.imageUrl = "Image URL or File is required";
         setErrors(tempErrors);
         return Object.keys(tempErrors).length === 0;
     };
@@ -52,15 +53,24 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         e.preventDefault();
         if (!validate()) return;
 
+        const data = new FormData();
+        Object.entries(formData).forEach(([key, value]) => {
+            if (value) data.append(key, value);
+        });
+        if (imageFile) {
+            data.append('image', imageFile);
+        }
+
         try {
             if (editingEvent) {
-                await updateEvent(editingEvent._id!, formData);
+                await updateEvent(editingEvent._id!, data);
             } else {
-                await createEvent(formData);
+                await createEvent(data);
             }
             setShowModal(false);
             setEditingEvent(null);
             setFormData({ title: '', category: '', location: '', price: '', date: '', imageUrl: '', description: '' });
+            setImageFile(null);
             loadEvents();
         } catch (err: any) {
             alert(err.response?.data?.message || 'Operation failed');
@@ -199,8 +209,12 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                                 {errors.location && <span style={{ color: 'var(--danger)', fontSize: '12px' }}>{errors.location}</span>}
                             </div>
                             <div style={{ gridColumn: 'span 2' }}>
-                                <label>Image URL</label>
-                                <input style={{ width: '100%' }} value={formData.imageUrl} onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })} />
+                                <label>Image Source</label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <input placeholder="Enter Image URL" style={{ width: '100%' }} value={formData.imageUrl} onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })} />
+                                    <div style={{ textAlign: 'center', color: 'var(--text-grey)', fontSize: '12px' }}>-- OR --</div>
+                                    <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)} style={{ width: '100%', padding: '5px' }} />
+                                </div>
                                 {errors.imageUrl && <span style={{ color: 'var(--danger)', fontSize: '12px' }}>{errors.imageUrl}</span>}
                             </div>
                             <div style={{ gridColumn: 'span 2' }}>
